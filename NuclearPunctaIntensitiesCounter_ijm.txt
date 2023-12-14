@@ -1,0 +1,75 @@
+//Made by Daniel Waiger 31.07.2020 - On Fiji 1.53c with Bio-formats 6.6.0
+//Modified by Carolina Zapater on 12.13.2023
+
+//0. Reset windows and close any open images
+roiManager("reset");
+run("Close All");
+
+//1. Opening the projection of the channel of interest
+showMessage("Open the projection of the puncta channel in order to measure intensities (.tiff file)");
+run("Open...");
+
+//2. Loading Puncta ROIs .zip binary image
+run("ROI Manager...");
+showMessage("Select ROI .zip file from the puncta channel (e.g.: Fibrillarin)");
+run("Open...");
+
+orgName = getTitle();
+
+//3. Selecting the output folder to save ROIs later
+showMessage("Choose output folder");
+output_path = getDirectory("Choose output folder"); 
+fileList = getFileList(output_path); 
+
+//4. Measure intensities and shapes of puncta
+run("Set Measurements...", "area mean standard perimeter fit shape feret's integrated display redirect=None decimal=3");
+roiManager("Deselect");
+roiManager("Measure")
+
+//5. Save files
+selectWindow("Results");
+saveAs("Results", output_path + orgName + " Puncta specs" + ".csv");
+
+
+
+//0. Reset windows and close any open images
+roiManager("reset");
+run("Close All");
+
+//1. Loading Nuclear ROIs .zip from the ***DAPI/Hoechst*** binary image
+run("ROI Manager...");
+showMessage("Select ROI .zip file from reference channel (i.e. Hoechst or Lamin)");
+run("Open...");
+
+
+//2. Selecting a file from the target binary unage and getting image name
+showMessage("Select binary image with nuclear puncta (e.g.: Fibrillarin)");
+run("Open...");
+orgName = getTitle();
+
+//3. Selecting the output folder to save ROIs later
+showMessage("Choose output folder");
+output_path = getDirectory("Choose output folder"); 
+fileList = getFileList(output_path); 
+
+//4. Counting dots inside each roi repeatedly over all ROIs
+	showMessage("If desired, adjust particle size in the macro accroding to the acquisition settings");
+	numberOfNuclei = roiManager("count");
+	for(i=0; i<numberOfNuclei; i++){
+		roiManager("Select", i);
+			run("Set Measurements...", "area perimeter display redirect=None decimal=3");
+			run("Analyze Particles...", "size=0-Infinity display summarize add");
+	}
+
+//5.Saving ROIs to a .zip file
+roiManager("save", output_path + orgName + ".zip")
+
+
+//6. Show process and analysis complete
+
+showMessage("ROI Extraction", orgName + " ROIs .zip file saved!");
+
+//7. Saving Results from summary window to a .csv
+selectWindow("Summary");
+saveAs("Results", output_path + orgName + " Counts" + ".csv");
+
